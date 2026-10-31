@@ -11,6 +11,9 @@ const rawClient = createClient({
   requiresAuth: false,
   analytics: false,
   appBaseUrl,
+  options: {
+    onError: () => {}, // Suppress unhandled SDK error logs in development
+  },
 });
 
 const hasBase44Backend =
