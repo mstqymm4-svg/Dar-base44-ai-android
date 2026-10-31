@@ -99,6 +99,9 @@ function otpApiPlugin() {
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    'process.env.NODE_ENV': JSON.stringify('production'),
+  },
   server: {
     port: 3000,
     host: '0.0.0.0',
