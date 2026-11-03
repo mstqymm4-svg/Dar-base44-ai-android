@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
   Heart,
@@ -13,6 +13,11 @@ import {
   ShieldCheck,
   Mail,
   RefreshCw,
+  Sparkles,
+  Upload,
+  Check,
+  X,
+  User,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -22,6 +27,7 @@ import EmailVerification from "@/components/EmailVerification";
 import ProfileStatChip from "@/components/profile/ProfileStatChip";
 import RecentReadsList from "@/components/profile/RecentReadsList";
 import ProfileQuickLinks from "@/components/profile/ProfileQuickLinks";
+import { AVATAR_PRESETS } from "@/lib/avatarPresets";
 import { useT } from "@/lib/i18n";
 import { toast } from "sonner";
 import {
@@ -53,12 +59,12 @@ export default function ProfileCard() {
     }
   });
 
-  // Current linked account email
   const [linkedEmail, setLinkedEmail] = useState(() => getAccountEmail());
   const [avatar, setAvatar] = useState(() => getAvatarUrl(getAccountEmail()));
   const [savingName, setSavingName] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isChangingEmail, setIsChangingEmail] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [stats, setStats] = useState({ favs: 0, dls: 0, reading: 0, watched: 0 });
   const [recentReads, setRecentReads] = useState([]);
   const [verified, setVerified] = useState(() => {
@@ -85,11 +91,17 @@ export default function ProfileCard() {
         } catch {}
       }
     };
+    const onAvatarChange = () => {
+      const em = getAccountEmail(user);
+      setAvatar(getAvatarUrl(em));
+    };
     window.addEventListener("dau-email-verified", onVerified);
     window.addEventListener("dau-email-change", onVerified);
+    window.addEventListener("dau-avatar-change", onAvatarChange);
     return () => {
       window.removeEventListener("dau-email-verified", onVerified);
       window.removeEventListener("dau-email-change", onVerified);
+      window.removeEventListener("dau-avatar-change", onAvatarChange);
     };
   }, [user]);
 
@@ -155,20 +167,65 @@ export default function ProfileCard() {
     } catch {}
   };
 
+  // Select a preset avatar
+  const handleSelectPreset = (preset) => {
+    const em = getAccountEmail(user) || linkedEmail.trim();
+    setAvatarUrl(em, preset.url);
+    setAvatar(preset.url);
+    try {
+      localStorage.setItem("dau_active_avatar", preset.url);
+    } catch {}
+    window.dispatchEvent(new Event("dau-avatar-change"));
+    setShowAvatarPicker(false);
+    toast.success(`تم اختيار صورة: ${preset.label} ✓`);
+  };
+
+  // Reset to initials
+  const handleResetAvatar = () => {
+    const em = getAccountEmail(user) || linkedEmail.trim();
+    setAvatarUrl(em, "");
+    setAvatar("");
+    try {
+      localStorage.removeItem("dau_active_avatar");
+    } catch {}
+    window.dispatchEvent(new Event("dau-avatar-change"));
+    setShowAvatarPicker(false);
+    toast.success("تمت استعادة الصورة الرمزية الافتراضية ✓");
+  };
+
+  // Custom photo upload
   const handleAvatarPick = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+
+    // Check size limit (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("حجم الصورة كبير جداً، يرجى اختيار صورة أقل من 5 ميجابايت");
+      return;
+    }
+
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
-      const em = getAccountEmail(user) || linkedEmail.trim();
-      setAvatarUrl(em, file_url);
-      setAvatar(file_url);
-      window.dispatchEvent(new Event("dau-avatar-change"));
-      toast.success(t.changePhoto + " ✓");
+      // Create a local data URL for instantaneous offline access
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const localDataUrl = uploadEvent.target?.result;
+        if (typeof localDataUrl === "string") {
+          const em = getAccountEmail(user) || linkedEmail.trim();
+          setAvatarUrl(em, localDataUrl);
+          setAvatar(localDataUrl);
+          try {
+            localStorage.setItem("dau_active_avatar", localDataUrl);
+          } catch {}
+          window.dispatchEvent(new Event("dau-avatar-change"));
+          setShowAvatarPicker(false);
+          toast.success("تم تحديث صورتك الشخصية بنجاح ✓");
+        }
+      };
+      reader.readAsDataURL(file);
     } catch {
-      toast.error(t.uploadFailed);
+      toast.error("تعذر تحميل الصورة، يرجى المحاولة مرة أخرى");
     } finally {
       setUploading(false);
     }
@@ -178,7 +235,7 @@ export default function ProfileCard() {
   const handleSaveName = async () => {
     const trimmed = fullName.trim();
     if (!trimmed) {
-      toast.error("يرجى إدخال الاسم الكامل");
+      toast.error("يرجى إدخال اسمك أولاً");
       return;
     }
     setSavingName(true);
@@ -210,26 +267,19 @@ export default function ProfileCard() {
     setVerified(true);
     setIsChangingEmail(false);
 
-    // Update remote profile
     base44.auth.updateMe({ email: verifiedEmail }).catch(() => {});
 
-    // Dispatch global events for other components
     try {
       window.dispatchEvent(new Event("dau-email-verified"));
       window.dispatchEvent(new Event("dau-email-change"));
     } catch {}
 
     await refreshStats(verifiedEmail);
-    toast.success("تم ربط البريد الإلكتروني بالملف الشخصي وتوثيقه بنجاح ✓");
+    toast.success("تم ربط البريد الإلكتروني وتوثيق الحساب بنجاح ✓");
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="bg-card border border-border rounded-2xl overflow-hidden"
-    >
+    <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
       {/* Banner */}
       <div className="h-32 bg-gradient-to-l from-primary/35 via-primary/15 to-accent/20 relative overflow-hidden">
         <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_80%_20%,hsl(var(--accent)/0.4),transparent_60%)]" />
@@ -242,11 +292,15 @@ export default function ProfileCard() {
       {/* Avatar + identity */}
       <div className="px-5 sm:px-6 -mt-10">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div className="relative self-start">
+          <div className="relative self-start group">
             <div className="p-[3px] rounded-full bg-gradient-to-br from-primary via-accent to-primary shadow-lg">
-              <div className="w-20 h-20 rounded-full ring-2 ring-card bg-primary/10 overflow-hidden flex items-center justify-center">
+              <div
+                onClick={() => setShowAvatarPicker(true)}
+                className="w-20 h-20 rounded-full ring-2 ring-card bg-primary/10 overflow-hidden flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                title="اضغط لتغيير الصورة الشخصية"
+              >
                 {avatar ? (
-                  <img src={avatar} alt={t.profile} className="w-full h-full object-cover" />
+                  <img src={avatar} alt="الصورة الشخصية" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-2xl font-black text-primary">
                     {initials(fullName, linkedEmail)}
@@ -254,17 +308,11 @@ export default function ProfileCard() {
                 )}
               </div>
             </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarPick}
-            />
+
             <button
-              onClick={() => fileRef.current?.click()}
+              onClick={() => setShowAvatarPicker(true)}
               disabled={uploading}
-              title={t.changePhoto}
+              title="تغيير الصورة الشخصية"
               className="absolute bottom-0 -end-1 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-60"
             >
               {uploading ? (
@@ -274,24 +322,119 @@ export default function ProfileCard() {
               )}
             </button>
           </div>
+
           <div className="pb-1 min-w-0 sm:text-end">
             <div className="flex items-center gap-1.5 sm:justify-end">
               <p className="font-bold text-base text-foreground truncate">
                 {fullName || "مستخدم دار العلوم"}
               </p>
-              {verified && (
+              {verified ? (
                 <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold border border-emerald-500/20">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>موثّق</span>
+                  <span>حساب موثّق</span>
+                </span>
+              ) : (
+                <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/12 text-amber-600 dark:text-amber-400 text-[11px] font-bold border border-amber-500/20">
+                  <span>غير موثّق</span>
                 </span>
               )}
             </div>
             <p className="text-xs text-muted-foreground truncate mt-0.5" dir="ltr">
-              {linkedEmail || "لا يوجد بريد مرتبط"}
+              {linkedEmail || "لا يوجد بريد إلكتروني مرتبط"}
             </p>
           </div>
         </div>
       </div>
+
+      {/* Avatar Picker Modal */}
+      <AnimatePresence>
+        {showAvatarPicker && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-5 sm:px-6 pt-5 overflow-hidden"
+          >
+            <div className="p-4 rounded-2xl bg-muted/40 border border-primary/20 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <h4 className="text-sm font-bold text-foreground">
+                    اختر صورتك الشخصية
+                  </h4>
+                </div>
+                <button
+                  onClick={() => setShowAvatarPicker(false)}
+                  className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Predefined Islamic Presets */}
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
+                {AVATAR_PRESETS.map((p) => {
+                  const isSelected = avatar === p.url;
+                  return (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => handleSelectPreset(p)}
+                      className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all relative ${
+                        isSelected
+                          ? "border-primary bg-primary/10 shadow-xs scale-105"
+                          : "border-border/60 hover:border-primary/40 hover:bg-card"
+                      }`}
+                    >
+                      <img src={p.url} alt={p.label} className="w-11 h-11 rounded-full shadow-xs" />
+                      <span className="text-[10px] font-medium text-foreground truncate w-full text-center">
+                        {p.label}
+                      </span>
+                      {isSelected && (
+                        <div className="absolute top-1 end-1 w-3.5 h-3.5 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Upload file or Reset */}
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/60">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarPick}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileRef.current?.click()}
+                  className="rounded-[4px_20px_4px_20px] text-xs h-9 gap-1.5"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>رفع صورة من جهازك</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleResetAvatar}
+                  className="rounded-[4px_20px_4px_20px] text-xs h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>استعادة الحرف الأول الافتراضي</span>
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Profile Form Fields */}
       <div className="px-5 sm:px-6 pt-5 space-y-5">
@@ -302,13 +445,13 @@ export default function ProfileCard() {
             <Input
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="اكتب اسمك الكامل..."
-              className="rounded-xl bg-background"
+              placeholder="اكتب اسمك الكامل هنا..."
+              className="rounded-xl bg-background text-sm font-medium"
             />
             <Button
               onClick={handleSaveName}
               disabled={savingName}
-              className="gap-1.5 rounded-[4px_20px_4px_20px] shrink-0 text-xs px-4"
+              className="gap-1.5 rounded-[4px_20px_4px_20px] shrink-0 text-xs px-4 shadow-xs"
             >
               {savingName ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -325,22 +468,21 @@ export default function ProfileCard() {
           <div className="flex items-center justify-between">
             <Label className="text-xs font-bold flex items-center gap-1.5">
               <Mail className="w-3.5 h-3.5 text-primary" />
-              <span>البريد الإلكتروني المرتبط بالحساب</span>
+              <span>البريد الإلكتروني الموثق للحساب</span>
             </Label>
             {verified && !isChangingEmail && (
               <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3" />
-                <span>متحقق منه بنجاح</span>
+                <span>موثّق برمز تحقق OTP</span>
               </span>
             )}
           </div>
 
-          {/* Condition 1: User has verified linked email and is not currently changing it */}
           {verified && !isChangingEmail ? (
             <div className="p-3.5 rounded-2xl bg-emerald-500/[0.05] border border-emerald-500/20 space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                     <Lock className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
@@ -348,7 +490,7 @@ export default function ProfileCard() {
                       {linkedEmail}
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      مرتبط بالملف الشخصي ومحمي برمز OTP
+                      مرتبط بالملف الشخصي وتعمل معه كافة ميزات المزامنة السحابية
                     </p>
                   </div>
                 </div>
@@ -358,7 +500,7 @@ export default function ProfileCard() {
                   variant="outline"
                   size="sm"
                   onClick={() => setIsChangingEmail(true)}
-                  className="rounded-[4px_20px_4px_20px] text-xs h-8 px-3 shrink-0 gap-1.5"
+                  className="rounded-[4px_20px_4px_20px] text-xs h-8 px-3 shrink-0 gap-1.5 shadow-2xs"
                 >
                   <RefreshCw className="w-3 h-3" />
                   <span>تغيير البريد</span>
@@ -366,7 +508,6 @@ export default function ProfileCard() {
               </div>
             </div>
           ) : (
-            /* Condition 2: No verified email, or changing email -> OTP verification flow */
             <EmailVerification
               currentEmail={linkedEmail}
               isVerified={verified}
@@ -429,6 +570,6 @@ export default function ProfileCard() {
         </div>
       )}
       {recentReads.length === 0 && <div className="pb-6" />}
-    </motion.div>
+    </div>
   );
 }

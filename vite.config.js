@@ -70,11 +70,24 @@ function otpApiPlugin() {
 
               if (record.code !== cleanOtp) {
                 record.attempts -= 1;
+                const remaining = Math.max(0, record.attempts);
+                if (remaining === 0) {
+                  otpStore.delete(cleanEmail);
+                  res.statusCode = 400;
+                  res.end(JSON.stringify({
+                    success: false,
+                    error: 'استنفدت جميع المحاولات (5/5). يرجى طلب رمز تحقق جديد الآن.',
+                    remainingAttempts: 0,
+                    exhausted: true,
+                  }));
+                  return;
+                }
                 res.statusCode = 400;
                 res.end(JSON.stringify({
                   success: false,
-                  error: `رمز التحقق غير صحيح، المحاولات المتبقية: ${record.attempts}`,
-                  remainingAttempts: record.attempts,
+                  error: `رمز التحقق غير صحيح، المحاولات المتبقية: ${remaining}`,
+                  remainingAttempts: remaining,
+                  exhausted: false,
                 }));
                 return;
               }

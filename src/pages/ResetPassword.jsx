@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Loader2, AlertTriangle } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import { toast } from "sonner";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -20,15 +21,16 @@ export default function ResetPassword() {
     e.preventDefault();
     setError("");
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("كلمتا المرور غير متطابقتين، يرجى التأكد");
       return;
     }
     setLoading(true);
     try {
       await base44.auth.resetPassword({ resetToken, newPassword });
+      toast.success("تم تغيير كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول.");
       window.location.href = "/login";
     } catch (err) {
-      setError(err.message || "Failed to reset password");
+      setError(err.message || "تعذر إعادة تعيين كلمة المرور، قد يكون الرابط منتهي الصلاحية");
     } finally {
       setLoading(false);
     }
@@ -38,16 +40,16 @@ export default function ResetPassword() {
     return (
       <AuthLayout
         icon={AlertTriangle}
-        title="Invalid reset link"
-        subtitle="This password reset link is missing or invalid"
+        title="رابط الاستعادة غير صالح"
+        subtitle="يبدو أن رابط استعادة كلمة المرور غير مكتمل أو منتهي الصلاحية"
         footer={
-          <Link to="/forgot-password" className="text-primary font-medium hover:underline">
-            Request a new link
+          <Link to="/forgot-password" className="text-primary font-bold hover:underline">
+            طلب رابط استعادة جديد
           </Link>
         }
       >
-        <p className="text-sm text-foreground text-center">
-          The link you used appears to be incomplete. Please request a new password reset email.
+        <p className="text-xs text-foreground text-center leading-relaxed">
+          يرجى طلب رابط استعادة جديد من صفحة استعادة كلمة المرور.
         </p>
       </AuthLayout>
     );
@@ -56,19 +58,19 @@ export default function ResetPassword() {
   return (
     <AuthLayout
       icon={Lock}
-      title="New password"
-      subtitle="Enter your new password below"
+      title="كلمة مرور جديدة"
+      subtitle="أدخل كلمة المرور الجديدة الخاصة بحسابك"
     >
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div className="mb-4 p-3 rounded-xl bg-destructive/10 text-destructive text-xs font-medium">
           {error}
         </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="password">New Password</Label>
+        <div className="space-y-1.5 text-start">
+          <Label htmlFor="password" className="text-xs font-bold">كلمة المرور الجديدة</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Input
               id="password"
               type="password"
@@ -77,15 +79,16 @@ export default function ResetPassword() {
               placeholder="••••••••"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="pl-10 h-12"
+              className="ps-10 h-11 rounded-xl"
+              dir="ltr"
               required
             />
           </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
+        <div className="space-y-1.5 text-start">
+          <Label htmlFor="confirm" className="text-xs font-bold">تأكيد كلمة المرور</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Input
               id="confirm"
               type="password"
@@ -93,19 +96,20 @@ export default function ResetPassword() {
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="pl-10 h-12"
+              className="ps-10 h-11 rounded-xl"
+              dir="ltr"
               required
             />
           </div>
         </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+        <Button type="submit" className="w-full h-11 font-bold rounded-[4px_20px_4px_20px] shadow-xs" disabled={loading}>
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Resetting...
+              <Loader2 className="w-4 h-4 ms-2 animate-spin" />
+              <span>جاري الحفظ...</span>
             </>
           ) : (
-            "Reset password"
+            <span>حفظ كلمة المرور الجديدة</span>
           )}
         </Button>
       </form>

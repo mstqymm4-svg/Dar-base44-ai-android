@@ -72,6 +72,8 @@ export default function ViewerToolbar({
           ? "border-neutral-800 bg-[#14171D]/95 text-stone-100"
           : theme === "sepia"
           ? "border-[#D5C7AD] bg-[#F3EAD8]/95 text-[#3D2E1E]"
+          : theme === "mint"
+          ? "border-[#BBD3C2] bg-[#E3ECE6]/95 text-[#183621]"
           : "border-stone-200 bg-[#FBF9F5]/95 text-stone-900"
       }`}
     >
@@ -79,7 +81,13 @@ export default function ViewerToolbar({
       <div
         dir="ltr"
         className={`h-2 cursor-pointer group relative ${
-          dark ? "bg-neutral-800" : theme === "sepia" ? "bg-[#DFD2BA]" : "bg-stone-200"
+          dark
+            ? "bg-neutral-800"
+            : theme === "sepia"
+            ? "bg-[#DFD2BA]"
+            : theme === "mint"
+            ? "bg-[#CADECF]"
+            : "bg-stone-200"
         }`}
         onMouseMove={(e) => {
           if (!totalPages) return;
@@ -168,6 +176,8 @@ export default function ViewerToolbar({
                 ? "text-stone-100 bg-neutral-800 hover:bg-neutral-700"
                 : theme === "sepia"
                 ? "text-[#3D2E1E] bg-[#E5D8C1] hover:bg-[#DBC9AC]"
+                : theme === "mint"
+                ? "text-[#183621] bg-[#D4E5D8] hover:bg-[#C5DAC9]"
                 : "text-stone-900 bg-stone-200/75 hover:bg-stone-300/80"
             }`}
           >

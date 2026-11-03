@@ -459,6 +459,11 @@ export function ThemeComfortPanel({
       swatch: "bg-[#EAE0CE] border-[#C9B79C] text-[#3D2E1E]",
     },
     {
+      id: "mint",
+      label: t.themeMintLabel || "زمردي مريح للعين",
+      swatch: "bg-[#E2EDE5] border-[#B8D3C0] text-[#1E3B27]",
+    },
+    {
       id: "dusk",
       label: t.themeDuskLabel || "مسائي هادئ",
       swatch: "bg-[#1C2026] border-slate-700 text-slate-100",
@@ -623,9 +628,15 @@ export function ThemeComfortPanel({
   );
 }
 
-/** Modal for jumping to a specific page. */
+/** Modal for jumping to a specific page with quick shortcuts. */
 export function GoToPanel({ show, value, setValue, totalPages, onGo, onClose }) {
   const t = useT();
+
+  const handleQuickJump = (pageNum) => {
+    const target = Math.max(1, Math.min(totalPages, pageNum));
+    setValue(String(target));
+  };
+
   return (
     <AnimatePresence>
       {show && (
@@ -634,22 +645,23 @@ export function GoToPanel({ show, value, setValue, totalPages, onGo, onClose }) 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 backdrop-blur-[1px]"
+          className="absolute inset-0 z-30 flex items-center justify-center bg-black/55 backdrop-blur-[2px]"
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.92 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0.92 }}
-            className="bg-card border border-border rounded-2xl p-4 w-72 max-w-[90%] space-y-3 shadow-2xl"
+            initial={{ scale: 0.92, y: 10 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.92, y: 10 }}
+            className="bg-card border border-border rounded-2xl p-4 w-80 max-w-[92%] space-y-3.5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold">{t.goToPageTitle || "الانتقال إلى صفحة"}</span>
-              <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
+              <span className="text-[11px] font-mono tabular-nums text-muted-foreground px-2 py-0.5 rounded bg-muted">
                 1 – {totalPages}
               </span>
             </div>
+
             <div className="flex items-center gap-2">
               <Input
                 type="number"
@@ -660,12 +672,39 @@ export function GoToPanel({ show, value, setValue, totalPages, onGo, onClose }) 
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && onGo()}
-                className="flex-1 text-center font-mono tabular-nums"
+                className="flex-1 text-center font-mono tabular-nums h-9"
               />
-              <Button size="sm" onClick={onGo}>
+              <Button size="sm" onClick={onGo} className="h-9 px-4 font-bold">
                 {t.goBtn || t.idxGo || "انتقال"}
               </Button>
             </div>
+
+            {/* Quick jump presets */}
+            {totalPages > 3 && (
+              <div className="flex items-center justify-between gap-1 pt-1 border-t border-border/50 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => handleQuickJump(1)}
+                  className="px-2 py-1 rounded-md bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground font-medium transition-colors"
+                >
+                  البداية (1)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickJump(Math.round(totalPages / 2))}
+                  className="px-2 py-1 rounded-md bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground font-medium transition-colors"
+                >
+                  المنتصف ({Math.round(totalPages / 2)})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickJump(totalPages)}
+                  className="px-2 py-1 rounded-md bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground font-medium transition-colors"
+                >
+                  النهاية ({totalPages})
+                </button>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

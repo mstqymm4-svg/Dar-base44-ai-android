@@ -50,6 +50,14 @@ export default function VideoPlayer({ video, onClose, playlist = [], onSelectVid
   const [rate, setRate] = useState(1);
   const [loop, setLoop] = useState(false);
   const loopRef = useRef(false);
+  const [feedbackPill, setFeedbackPill] = useState(null);
+  const feedbackTimerRef = useRef(null);
+
+  const showPill = (text) => {
+    setFeedbackPill(text);
+    clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = setTimeout(() => setFeedbackPill(null), 1200);
+  };
 
   // Auto-advance countdown state
   const [autoAdvanceTimer, setAutoAdvanceTimer] = useState(null);
@@ -272,12 +280,14 @@ export default function VideoPlayer({ video, onClose, playlist = [], onSelectVid
     setRate(s);
     player.setPlaybackRate(s);
     setShowSpeedMenu(false);
+    showPill(`سرعة التشغيل: ${s}x`);
   };
 
   const toggleLoop = () => {
     const v = !loop;
     setLoop(v);
     loopRef.current = v;
+    showPill(v ? "وضع التكرار: مفعّل 🔁" : "وضع التكرار: معطّل");
   };
 
   // Draggable progress bar
@@ -449,6 +459,20 @@ export default function VideoPlayer({ video, onClose, playlist = [], onSelectVid
           </div>
         )}
 
+        {/* Momentary action feedback pill (Speed / Loop) */}
+        <AnimatePresence>
+          {feedbackPill && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.85, y: -10 }}
+              className="absolute top-20 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-2xl bg-black/85 backdrop-blur-xl border border-white/20 text-white font-bold text-xs shadow-2xl pointer-events-none flex items-center gap-2"
+            >
+              <span>{feedbackPill}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Playlist panel */}
         <PlaylistPanel
           show={showPlaylist}
@@ -480,25 +504,46 @@ export default function VideoPlayer({ video, onClose, playlist = [], onSelectVid
                     <HelpCircle className="w-4 h-4 text-primary" />
                     <span>{t.shortcutsTitle}</span>
                   </h3>
-                  <button onClick={() => setShowShortcutsModal(false)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center">
+                  <button onClick={() => setShowShortcutsModal(false)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="space-y-2 text-xs text-stone-300">
-                  <div className="flex justify-between p-2 rounded-lg bg-white/5">
-                    <span>{t.shortcutPlayPause}</span>
+                <div className="space-y-1.5 text-xs text-stone-200">
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
+                    <span>تشغيل / إيقاف مؤقت</span>
+                    <div className="flex items-center gap-1 font-mono text-[11px]">
+                      <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/10 font-bold">Space</kbd>
+                    </div>
                   </div>
-                  <div className="flex justify-between p-2 rounded-lg bg-white/5">
-                    <span>{t.shortcutSeek}</span>
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
+                    <span>تقديم / ترجيع (5 ثوانٍ)</span>
+                    <div className="flex items-center gap-1 font-mono text-[11px]">
+                      <kbd className="px-1.5 py-0.5 rounded bg-white/10 border border-white/10 font-bold">→</kbd>
+                      <kbd className="px-1.5 py-0.5 rounded bg-white/10 border border-white/10 font-bold">←</kbd>
+                    </div>
                   </div>
-                  <div className="flex justify-between p-2 rounded-lg bg-white/5">
-                    <span>{t.shortcutVolume}</span>
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
+                    <span>رفع / خفض مستوى الصوت</span>
+                    <div className="flex items-center gap-1 font-mono text-[11px]">
+                      <kbd className="px-1.5 py-0.5 rounded bg-white/10 border border-white/10 font-bold">↑</kbd>
+                      <kbd className="px-1.5 py-0.5 rounded bg-white/10 border border-white/10 font-bold">↓</kbd>
+                    </div>
                   </div>
-                  <div className="flex justify-between p-2 rounded-lg bg-white/5">
-                    <span>{t.shortcutFullscreen}</span>
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
+                    <span>ملء الشاشة</span>
+                    <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/10 font-bold font-mono text-[11px]">F</kbd>
                   </div>
-                  <div className="flex justify-between p-2 rounded-lg bg-white/5">
-                    <span>{t.shortcutMute}</span>
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
+                    <span>كتم / تشغيل الصوت</span>
+                    <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/10 font-bold font-mono text-[11px]">M</kbd>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
+                    <span>تكرار الفيديو</span>
+                    <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/10 font-bold font-mono text-[11px]">L</kbd>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
+                    <span>إغلاق المشغل</span>
+                    <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/10 font-bold font-mono text-[11px]">Esc</kbd>
                   </div>
                 </div>
               </motion.div>
@@ -714,20 +759,30 @@ export default function VideoPlayer({ video, onClose, playlist = [], onSelectVid
                     </PlayerButton>
                   )}
 
-                  {/* Volume with hover/tap slider */}
+                  {/* Volume with responsive hover & tap popover */}
                   <div
                     className="relative flex items-center"
                     onMouseEnter={() => setShowVolumeSlider(true)}
                     onMouseLeave={() => setShowVolumeSlider(false)}
                   >
-                    <PlayerButton onClick={toggleMute} size="sm" title={t.shortcutMute}>
+                    <PlayerButton
+                      onClick={() => {
+                        if (typeof window !== "undefined" && window.innerWidth < 640) {
+                          setShowVolumeSlider((s) => !s);
+                        } else {
+                          toggleMute();
+                        }
+                      }}
+                      size="sm"
+                      title={t.shortcutMute}
+                    >
                       {muted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                     </PlayerButton>
 
                     {showVolumeSlider && (
                       <div
                         dir="ltr"
-                        className="hidden sm:flex items-center px-2 py-1 bg-stone-900/90 backdrop-blur rounded-full ring-1 ring-white/15 w-24 ms-1 transition-all"
+                        className="absolute bottom-11 start-1/2 -translate-x-1/2 sm:static sm:translate-x-0 flex items-center px-2.5 py-1.5 bg-stone-900/95 backdrop-blur-xl rounded-full ring-1 ring-white/15 w-28 sm:w-24 sm:ms-1 shadow-2xl z-30 transition-all"
                       >
                         <input
                           type="range"
@@ -735,7 +790,7 @@ export default function VideoPlayer({ video, onClose, playlist = [], onSelectVid
                           max="100"
                           value={muted ? 0 : volume}
                           onChange={(e) => handleVolumeChange(Number(e.target.value))}
-                          className="w-full accent-primary h-1 cursor-pointer"
+                          className="w-full accent-primary h-1.5 cursor-pointer"
                         />
                       </div>
                     )}

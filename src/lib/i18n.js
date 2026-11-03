@@ -286,6 +286,7 @@ export const TRANSLATIONS = {
     paperThemeLabel: "سمة الورق والإضاءة",
     themeLightLabel: "نهاري ورقي",
     themeSepiaLabel: "قرطاس تراثي",
+    themeMintLabel: "زمردي مريح للعين",
     themeDuskLabel: "مسائي هادئ",
     themeDarkLabel: "ليلي داكن",
     viewModeLabel: "نمط عرض الصفحات",

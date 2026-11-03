@@ -3,6 +3,8 @@ import {
   Loader2,
   AlertCircle,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { loadPdfDocument, extractPageText, clearPageCache } from "@/lib/pdfLoader";
 import { useT } from "@/lib/i18n";
@@ -35,7 +37,7 @@ export default function ProBookViewer({
   const [theme, setTheme] = useState(() => {
     try {
       const v = localStorage.getItem("dau_reader_theme");
-      return ["light", "dark", "sepia", "dusk"].includes(v) ? v : "light";
+      return ["light", "dark", "sepia", "dusk", "mint"].includes(v) ? v : "light";
     } catch {
       return "light";
     }
@@ -481,6 +483,39 @@ export default function ProBookViewer({
         scrollToPageRef={scrollToPageRef}
         onToggleToolbar={() => setShowToolbar((s) => !s)}
       />
+
+      {/* Floating desktop side navigation buttons for effortless reading */}
+      {totalPages > 1 && (
+        <>
+          <button
+            data-viewer-ui
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              isRTL ? nextPage() : prevPage();
+            }}
+            disabled={isRTL ? currentPage >= totalPages : currentPage <= 1}
+            title={isRTL ? t.tbNext || "الصفحة التالية" : t.tbPrev || "الصفحة السابقة"}
+            className="hidden md:flex absolute top-1/2 -translate-y-1/2 start-3 z-20 w-11 h-11 rounded-full items-center justify-center bg-black/40 hover:bg-black/70 text-white backdrop-blur-md transition-all active:scale-90 disabled:opacity-0 disabled:pointer-events-none shadow-lg ring-1 ring-white/15"
+          >
+            {isRTL ? <ChevronRight className="w-6 h-6" /> : <ChevronLeft className="w-6 h-6" />}
+          </button>
+
+          <button
+            data-viewer-ui
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              isRTL ? prevPage() : nextPage();
+            }}
+            disabled={isRTL ? currentPage <= 1 : currentPage >= totalPages}
+            title={isRTL ? t.tbPrev || "الصفحة السابقة" : t.tbNext || "الصفحة التالية"}
+            className="hidden md:flex absolute top-1/2 -translate-y-1/2 end-3 z-20 w-11 h-11 rounded-full items-center justify-center bg-black/40 hover:bg-black/70 text-white backdrop-blur-md transition-all active:scale-90 disabled:opacity-0 disabled:pointer-events-none shadow-lg ring-1 ring-white/15"
+          >
+            {isRTL ? <ChevronLeft className="w-6 h-6" /> : <ChevronRight className="w-6 h-6" />}
+          </button>
+        </>
+      )}
 
       {/* Zoom level indicator */}
       <div

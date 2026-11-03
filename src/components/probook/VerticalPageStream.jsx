@@ -24,6 +24,13 @@ export const READER_THEMES = {
     pageShadow: "shadow-[0_6px_26px_rgba(68,51,28,0.15)] ring-1 ring-[#D8CAAE]",
     badgeBg: "bg-[#3D2E1E]/85 text-[#F7EFE2]",
   },
+  mint: {
+    id: "mint",
+    canvasBg: "bg-[#EBF3ED]",
+    pageBg: "bg-[#EBF3ED]",
+    pageShadow: "shadow-[0_6px_26px_rgba(20,50,30,0.14)] ring-1 ring-[#C8DCCF]",
+    badgeBg: "bg-[#1E3B27]/85 text-[#E6F4EA]",
+  },
   dusk: {
     id: "dusk",
     canvasBg: "bg-[#181C22]",

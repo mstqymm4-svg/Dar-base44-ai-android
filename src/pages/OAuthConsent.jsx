@@ -136,48 +136,42 @@ export default function OAuthConsent() {
 
   if (checking) {
     return (
-      <AuthLayout icon={ShieldCheck} title="Authorize access">
-        <div className="flex items-center justify-center py-6 text-muted-foreground">
-          <Loader2 className="w-5 h-5 mr-2 animate-spin" aria-hidden="true" />
-          Loading…
+      <AuthLayout icon={ShieldCheck} title="تفويض الوصول">
+        <div className="flex items-center justify-center py-6 text-muted-foreground gap-2">
+          <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+          <span>جاري التحميل...</span>
         </div>
       </AuthLayout>
     );
   }
 
-  const client = (info && info.client_name) || "An AI client";
-  const appName = (info && info.app_name) || "this app";
+  const client = (info && info.client_name) || "تطبيق ذكاء اصطناعي";
+  const appName = (info && info.app_name) || "دار العلوم";
 
   if (decided) {
     return (
       <AuthLayout
         icon={ShieldCheck}
-        title={decided === "approve" ? "Access granted" : "Access denied"}
-        subtitle={`You can return to ${client} and close this window.`}
+        title={decided === "approve" ? "تم منح الإذن بنجاح" : "تم رفض الطلب"}
+        subtitle={`يمكنك الآن العودة إلى ${client} وإغلاق هذه النافذة.`}
       />
     );
   }
 
-  // Terminal: the authorization request is no longer valid (tool set changed +
-  // handle consumed). Retrying can't succeed, so show reconnect guidance with
-  // no approve/deny controls.
   if (reconnect) {
     return (
-      <AuthLayout icon={ShieldCheck} title="Reconnect required">
-        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+      <AuthLayout icon={ShieldCheck} title="مطلوب إعادة الاتصال">
+        <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-xs font-medium">
           {reconnect}
         </div>
       </AuthLayout>
     );
   }
 
-  // No consent details means nothing trustworthy to approve: a failed
-  // consent-info load (expired handle, rate limit, transient error) renders
-  // the error alone, never the approve/deny controls.
   if (error && !info) {
     return (
-      <AuthLayout icon={ShieldCheck} title="Authorize access">
-        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+      <AuthLayout icon={ShieldCheck} title="تفويض الوصول">
+        <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-xs font-medium">
           {error}
         </div>
       </AuthLayout>
@@ -189,27 +183,27 @@ export default function OAuthConsent() {
   return (
     <AuthLayout
       icon={ShieldCheck}
-      title="Authorize access"
-      subtitle={`${client} wants to access ${appName} on your behalf`}
+      title="تفويض الوصول"
+      subtitle={`يطلب ${client} الإذن بالوصول إلى ${appName} نيابة عنك`}
     >
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div className="mb-4 p-3 rounded-xl bg-destructive/10 text-destructive text-xs font-medium">
           {error}
         </div>
       )}
 
-      <p className="text-sm font-medium text-foreground mb-2">
-        {tools.length ? `It will be able to use these tools in ${appName}:` : "No tools requested"}
+      <p className="text-xs font-bold text-foreground mb-2">
+        {tools.length ? `الأدوات والصلاحيات المطلوبة في ${appName}:` : "لم يتم طلب أدوات محددة"}
       </p>
       {tools.length > 0 && (
-        <ul className="space-y-2 text-sm mb-6">
+        <ul className="space-y-2 text-xs mb-6">
           {tools.map((tool) => (
-            <li key={tool.name} className="flex flex-col">
-              <span className="text-foreground font-medium">
+            <li key={tool.name} className="flex flex-col p-2.5 rounded-lg bg-muted/40 border border-border/50">
+              <span className="text-foreground font-bold">
                 {tool.title || tool.name}
               </span>
               {tool.description && (
-                <span className="text-muted-foreground">{tool.description}</span>
+                <span className="text-muted-foreground mt-0.5">{tool.description}</span>
               )}
             </li>
           ))}
@@ -219,19 +213,19 @@ export default function OAuthConsent() {
       <div className="flex gap-3">
         <Button
           variant="outline"
-          className="flex-1 h-12 font-medium"
+          className="flex-1 h-11 font-bold rounded-[4px_20px_4px_20px]"
           disabled={submitting}
           onClick={() => respond("deny")}
         >
-          Deny
+          رفض
         </Button>
         <Button
-          className="flex-1 h-12 font-medium"
+          className="flex-1 h-11 font-bold rounded-[4px_20px_4px_20px] shadow-xs"
           disabled={submitting}
           onClick={() => respond("approve")}
         >
-          {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-          Approve
+          {submitting ? <Loader2 className="w-4 h-4 ms-2 animate-spin" /> : null}
+          الموافقة ومنح الإذن
         </Button>
       </div>
     </AuthLayout>
