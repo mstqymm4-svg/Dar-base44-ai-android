@@ -4,10 +4,20 @@ import App from '@/App.jsx'
 import '@/index.css'
 import { migrateLegacySettings } from '@/lib/settingsStore'
 
-// Suppress harmless ResizeObserver loop errors globally
+// Suppress harmless ResizeObserver loop & Base44 preview 404 errors globally
 window.addEventListener('error', (e) => {
-  if (e.message && e.message.includes('ResizeObserver')) {
+  const msg = String(e.message || '');
+  if (msg.includes('ResizeObserver') || msg.includes('[Base44 SDK Error]') || (msg.includes('Base44') && msg.includes('404'))) {
     e.stopImmediatePropagation();
+    e.preventDefault();
+  }
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+  const msg = String(e.reason?.message || e.reason || '');
+  if (msg.includes('[Base44 SDK Error]') || (msg.includes('Base44') && msg.includes('404'))) {
+    e.stopImmediatePropagation();
+    e.preventDefault();
   }
 });
 

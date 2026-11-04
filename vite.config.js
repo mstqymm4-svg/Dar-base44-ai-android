@@ -104,6 +104,14 @@ function otpApiPlugin() {
           return;
         }
 
+        // Fallback handler for any other /api/* or /apps/* requests so they return 200 OK
+        if (url.startsWith('/api/') || url.startsWith('/apps/')) {
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: true, data: [] }));
+          return;
+        }
+
         next();
       });
     }
@@ -127,7 +135,7 @@ export default defineConfig({
       legacySDKImports: process.env.BASE44_LEGACY_SDK_IMPORTS === 'true',
       hmrNotifier: true,
       navigationNotifier: true,
-      analyticsTracker: true,
+      analyticsTracker: false,
       visualEditAgent: true
     }),
     react(),

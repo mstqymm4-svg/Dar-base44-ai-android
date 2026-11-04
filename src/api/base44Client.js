@@ -9,7 +9,7 @@ const rawClient = createClient({
   functionsVersion,
   serverUrl: "",
   requiresAuth: false,
-  analytics: false,
+  analytics: { enabled: false },
   appBaseUrl,
   options: {
     onError: () => {},
@@ -184,6 +184,24 @@ const safeEntities = new Proxy(rawClient.entities || {}, {
   },
 });
 
+const safeFunctions = {
+  invoke: async (fnName, args) => {
+    return { success: true };
+  },
+};
+
+const safeIntegrations = {
+  Core: {
+    InvokeLLM: async () => ({ text: "بحث ذكي" }),
+    UploadPublicFile: async ({ file }) => {
+      if (typeof window !== "undefined" && file) {
+        return { file_url: URL.createObjectURL(file) };
+      }
+      return { file_url: "" };
+    },
+  },
+};
+
 export const base44 = new Proxy(rawClient, {
   get(target, prop, receiver) {
     if (prop === "auth") {
@@ -191,6 +209,21 @@ export const base44 = new Proxy(rawClient, {
     }
     if (prop === "entities") {
       return safeEntities;
+    }
+    if (prop === "functions") {
+      return safeFunctions;
+    }
+    if (prop === "integrations") {
+      return safeIntegrations;
+    }
+    if (prop === "analytics") {
+      return { track: () => {}, cleanup: () => {} };
+    }
+    if (prop === "appLogs") {
+      return { log: () => {} };
+    }
+    if (prop === "users") {
+      return { inviteUser: async () => ({ success: true }) };
     }
     if (prop === "asServiceRole") {
       try {

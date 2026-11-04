@@ -21,6 +21,27 @@
     <meta property="og:description" content="مكتبة إسلامية شاملة: كتب، فيديوهات، وترجمات القرآن والسنة" />
 
     <title>دار العلوم - مكتبة إسلامية</title>
+    <script>
+      (function() {
+        var _err = console.error;
+        console.error = function() {
+          var str = Array.prototype.slice.call(arguments).map(function(a) {
+            return String((a && a.message) || a || '');
+          }).join(' ');
+          if (str.indexOf('[Base44 SDK Error]') !== -1 || (str.indexOf('Base44') !== -1 && str.indexOf('404') !== -1)) {
+            return;
+          }
+          _err.apply(console, arguments);
+        };
+        window.addEventListener('unhandledrejection', function(e) {
+          var str = String((e.reason && e.reason.message) || e.reason || '');
+          if (str.indexOf('[Base44 SDK Error]') !== -1 || (str.indexOf('Base44') !== -1 && str.indexOf('404') !== -1)) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+          }
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
