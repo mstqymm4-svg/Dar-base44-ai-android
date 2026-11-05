@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   AlertCircle,
   Lock,
-  Trash2,
   User,
   SlidersHorizontal,
 } from "lucide-react";
@@ -24,17 +23,6 @@ import { MobileSelect } from "@/components/ui/mobile-select";
 import SettingRow from "@/components/SettingRow";
 import ProfileCard from "@/components/ProfileCard";
 import SettingsCard from "@/components/settings/SettingsCard";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import MobileHeader from "@/components/MobileHeader";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -182,17 +170,6 @@ export default function Settings() {
       } catch (e) {}
       window.location.replace("/");
     }, 600);
-  };
-
-  const handleDeleteAccount = async () => {
-    try {
-      await base44.functions.invoke("deleteAccountRequest", {});
-      toast.success(t.deleteRequestSent);
-    } catch (e) {
-      toast.error(t.deleteRequestFailed);
-      return;
-    }
-    setTimeout(() => handleLogout(), 1000);
   };
 
   if (loading) return <PageSpinner />;
@@ -535,18 +512,17 @@ export default function Settings() {
 
       {/* ─── إدارة الحساب ────────────────────────────────────────────── */}
       <div className="space-y-3">
-        <GroupLabel>إدارة الحساب</GroupLabel>
+        <GroupLabel>الجلسة</GroupLabel>
 
         <SettingsCard
           icon={<LogOut className="w-5 h-5" />}
-          title="إدارة الجلسة والحساب"
-          description="تسجيل الخروج أو حذف الحساب نهائياً"
+          title="الجلسة وتسجيل الخروج"
+          description="الخروج من حسابك على هذا الجهاز"
           tone="destructive"
           danger
           open={openSections.danger}
           onToggle={() => toggleSection("danger")}
         >
-          {/* Logout row */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3.5 rounded-xl bg-muted/40 border border-border/60">
             <div>
               <p className="text-xs font-bold text-foreground">{t.logout}</p>
@@ -561,43 +537,9 @@ export default function Settings() {
             </Button>
           </div>
 
-          {/* Account Deletion row */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3.5 rounded-xl bg-destructive/[0.04] border border-destructive/20">
-            <div>
-              <p className="text-xs font-bold text-destructive flex items-center gap-1.5">
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>{t.deleteAccount}</span>
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                {t.deleteAccountSub}
-              </p>
-            </div>
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  className="gap-2 rounded-[4px_20px_4px_20px] text-xs h-9 self-start sm:self-auto shadow-2xs"
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> <span>{t.deleteAccount}</span>
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t.deleteAccountConfirm}</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t.deleteAccountWarning}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteAccount}>
-                    {t.deletePermanently}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            لحذف حسابك ومسح بياناتك نهائياً، استخدم زر «{t.deleteAccount}» داخل بطاقة الملف الشخصي.
+          </p>
         </SettingsCard>
       </div>
     </div>

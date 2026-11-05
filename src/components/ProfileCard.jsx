@@ -18,11 +18,23 @@ import {
   Check,
   X,
   User,
+  Trash2,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import EmailVerification from "@/components/EmailVerification";
 import ProfileStatChip from "@/components/profile/ProfileStatChip";
 import RecentReadsList from "@/components/profile/RecentReadsList";
@@ -65,6 +77,7 @@ export default function ProfileCard() {
   const [uploading, setUploading] = useState(false);
   const [isChangingEmail, setIsChangingEmail] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [stats, setStats] = useState({ favs: 0, dls: 0, reading: 0, watched: 0 });
   const [recentReads, setRecentReads] = useState([]);
   const [verified, setVerified] = useState(() => {
@@ -276,6 +289,29 @@ export default function ProfileCard() {
 
     await refreshStats(verifiedEmail);
     toast.success("تم ربط البريد الإلكتروني وتوثيق الحساب بنجاح ✓");
+  };
+
+  // Permanently close the account and wipe the user's stored data
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      await base44.functions.invoke("deleteAccountRequest", {});
+    } catch (err) {
+      setDeletingAccount(false);
+      toast.error(t.deleteRequestFailed);
+      return;
+    }
+    try {
+      const prefixes = ["dau_", "lastpage_", "lastts_", "email_verified_"];
+      Object.keys(localStorage)
+        .filter((k) => prefixes.some((p) => k.startsWith(p)))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch {}
+    toast.success(t.deleteRequestSent);
+    try {
+      await base44.auth.logout("/");
+    } catch {}
+    window.location.replace("/");
   };
 
   return (
@@ -558,6 +594,51 @@ export default function ProfileCard() {
       {/* Quick links */}
       <div className="px-5 sm:px-6 pt-4">
         <ProfileQuickLinks />
+      </div>
+
+      {/* Close account */}
+      <div className="px-5 sm:px-6 pb-6 pt-5">
+        <div className="p-4 rounded-2xl border border-destructive/25 bg-destructive/[0.04] space-y-3">
+          <div className="flex items-start gap-2.5">
+            <Trash2 className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-destructive">{t.deleteAccount}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                {t.deleteAccountSub}
+              </p>
+            </div>
+          </div>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={deletingAccount}
+                className="gap-1.5 rounded-[4px_20px_4px_20px] text-xs h-9 shadow-2xs"
+              >
+                {deletingAccount ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+                <span>{t.deleteAccount}</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t.deleteAccountConfirm}</AlertDialogTitle>
+                <AlertDialogDescription>{t.deleteAccountWarning}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteAccount}>
+                  {t.deletePermanently}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       {/* Recent reads */}
